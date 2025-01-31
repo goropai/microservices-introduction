@@ -2,13 +2,10 @@ package com.goropai.resourceservice.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.Constraint;
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import org.apache.tika.Tika;
 
 import java.lang.annotation.*;
 
@@ -27,9 +24,6 @@ public class Mp3File {
     @NotNull(message = "The MP3 file is invalid: it is null")
     @ValidMp3File
     private byte[] data;
-
-    /*@OneToOne(mappedBy = "mp3File")
-    private Mp3Metadata mp3Metadata;*/
 
     public Mp3File() {
     }
@@ -53,14 +47,6 @@ public class Mp3File {
     public void setData(byte[] data) {
         this.data = data;
     }
-
-    /*public Mp3Metadata getMp3Metadata() {
-        return mp3Metadata;
-    }
-
-    public void setMp3Metadata(Mp3Metadata mp3Metadata) {
-        this.mp3Metadata = mp3Metadata;
-    }*/
 
 }
 
