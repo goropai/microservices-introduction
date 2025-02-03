@@ -1,10 +1,12 @@
 package com.goropai.songservice.controller;
 
 import com.goropai.songservice.entity.Mp3Metadata;
+import com.goropai.songservice.entity.dto.SongIdsResponse;
 import com.goropai.songservice.service.Mp3MetadataService;
-import jakarta.persistence.PersistenceException;
+import com.goropai.songservice.service.exception.CsvValidationException;
+import com.goropai.songservice.service.exception.MetadataAlreadyExistException;
+import com.goropai.songservice.service.exception.MetadataNotFoundException;
 import jakarta.transaction.Transactional;
-import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -38,41 +40,12 @@ public class Mp3MetadataController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @PostMapping(path = "/songs")
-    public ResponseEntity<Mp3Metadata> save(@RequestParam final int id,
-                                            @RequestParam final String name,
-                                            @RequestParam final String artist,
-                                            @RequestParam final String album,
-                                            @RequestParam final String duration,
-                                            @RequestParam final String year) {
-        if (mp3MetadataService.existsById(id)) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
+    public ResponseEntity<Mp3Metadata> save(@RequestBody Mp3Metadata metadata) {
+        if (mp3MetadataService.existsById(metadata.getId())) {
+            throw new MetadataAlreadyExistException(metadata.getId());
         }
-        Mp3Metadata metadata = new Mp3Metadata();
-        metadata.setId(id);
-        metadata.setName(name);
-        metadata.setArtist(artist);
-        metadata.setAlbum(album);
-        metadata.setDuration(Double.parseDouble(duration));
-        metadata.setYear(Integer.valueOf(year));
-
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
-        }
-        catch (Exception e) {
-            Throwable rootCause = findRootCause(e);
-            if (rootCause instanceof ConstraintViolationException) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    private Throwable findRootCause(Throwable ex) {
-        Throwable cause = ex;
-        while (cause.getCause() != null) {
-            cause = cause.getCause();
-        }
-        return cause;
+        metadata.validate();
+        return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
     }
 
     /**
@@ -87,14 +60,9 @@ public class Mp3MetadataController {
      */
     @GetMapping(path = "/songs/{id}")
     public ResponseEntity<Mp3Metadata> getById(@PathVariable @Validated final int id) {
-        try {
-            Optional<Mp3Metadata> found = mp3MetadataService.getById(id);
-            return found.map(m -> ResponseEntity.status(HttpStatus.OK).body(m))
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-        }
-        catch (PersistenceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        Optional<Mp3Metadata> found = mp3MetadataService.getById(id);
+        return found.map(m -> ResponseEntity.status(HttpStatus.OK).body(m))
+                .orElseThrow(() -> new MetadataNotFoundException(id));
     }
 
 
@@ -110,23 +78,21 @@ public class Mp3MetadataController {
      */
     @DeleteMapping(path = "/songs")
     @Transactional
-    public ResponseEntity<List<Integer>> deleteById(@RequestParam(name = "id") String ids) {
-        if (ids.length() <= 0 || ids.length() > 200) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public ResponseEntity<SongIdsResponse> deleteById(@RequestParam(name = "id") String ids) {
+        if (ids.isEmpty() || ids.length() > 200) {
+            throw new CsvValidationException("CSV string length is out of bounds [0, 200]");
         }
-        List<Integer> correctIds = Stream.of(ids.split(","))
-                .map(Integer::valueOf)
-                .filter(mp3MetadataService::existsById)
-                .toList();
-        if (correctIds.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        List<Integer> correctIds;
         try {
-            correctIds.forEach(mp3MetadataService::deleteById);
+            correctIds = Stream.of(ids.split(","))
+                    .map(Integer::valueOf)
+                    .filter(mp3MetadataService::existsById)
+                    .toList();
         }
-        catch (PersistenceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        catch (NumberFormatException e) {
+            throw new CsvValidationException("CSV contains invalid characters");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(correctIds);
+        correctIds.forEach(mp3MetadataService::deleteById);
+        return ResponseEntity.status(HttpStatus.OK).body(new SongIdsResponse(correctIds));
     }
 }

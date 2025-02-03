@@ -1,11 +1,20 @@
 package com.goropai.songservice.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.*;
 import jakarta.validation.constraints.*;
+import org.springframework.stereotype.Component;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.lang.annotation.ElementType.*;
 
 @Entity
 @Table(name = "song", schema = "songs")
@@ -32,20 +41,28 @@ public class Mp3Metadata {
 
     @Column(name = "year")
     @NotNull(message = "The Year is required")
-    @Min(value = 1900, message = "The Year should not be less than 1900")
-    @Max(value = 2099, message = "The Year should not be more than 2099")
-    private Integer year;
+    @ValidYear
+    private String year;
 
     @Column(name = "duration")
-    @NotNull(message = "The Duration is required")
-    @JsonIgnore
-    private double duration;
+    @ValidDuration
+    private String duration;
 
-    @Transient
-    @JsonProperty("duration")
-    public String getDurationFormatted() {
-        Duration duration = Duration.ofSeconds((long) this.duration);
-        return String.format("%02d:%02d", duration.toMinutesPart(), duration.toSecondsPart());
+    public Mp3Metadata() {
+    }
+
+    public Mp3Metadata(Integer id, String artist, String name, String album, String year, String duration) {
+        this.id = id;
+        this.artist = artist;
+        this.name = name;
+        this.album = album;
+        this.year = year;
+        this.duration = duration;
+    }
+
+    public static String getDurationFormatted(double duration) {
+        Duration d = Duration.ofSeconds((long) duration);
+        return String.format("%02d:%02d", d.toMinutesPart(), d.toSecondsPart());
     }
 
     public Integer getId() {
@@ -80,27 +97,125 @@ public class Mp3Metadata {
         this.album = album;
     }
 
-    public double getDuration() {
+    public String getDuration() {
         return duration;
     }
 
-    public void setDuration(double duration) {
+    public void setDuration(String duration) {
         this.duration = duration;
     }
 
-    public Integer getYear() {
+    public String getYear() {
         return year;
     }
 
-    public void setYear(Integer year) {
+    public void setYear(String year) {
         this.year = year;
     }
 
-    /*public Mp3File getMp3File() {
-        return mp3File;
+    public void validate() throws ValidationException {
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = factory.getValidator();
+            Set<ConstraintViolation<Mp3Metadata>> violations = validator.validate(this);
+            if (!violations.isEmpty()) {
+                String errorMessage = violations.stream()
+                        .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                        .collect(Collectors.joining(", "));
+                throw new ValidationException(errorMessage);
+            }
+        }
     }
 
-    public void setMp3File(Mp3File mp3File) {
-        this.mp3File = mp3File;
-    }*/
+    @Documented
+    @Constraint(validatedBy = YearFormatValidator.class)
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface ValidYear {
+        String message() default "Invalid year format. Year must be a valid 4-digit integer in range [1900:2099]";
+        Class<?>[] groups() default {};
+        Class<? extends Payload>[] payload() default {};
+    }
+
+    @Component
+    public static class YearFormatValidator implements ConstraintValidator<ValidYear, String> {
+        @Override
+        public boolean isValid(String yearString, ConstraintValidatorContext context) {
+            if (yearString == null || yearString.isEmpty()) {
+                return false;
+            }
+
+            if (yearString.length() != 4) {
+                return false;
+            }
+
+            try {
+                int year = Integer.parseInt(yearString);
+                return year >= 1900 && year <= 2099;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+    }
+
+    @Documented
+    @Constraint(validatedBy = DurationFormatValidator.class)
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface ValidDuration {
+        String message() default "Invalid duration format. Duration must be greater than 0 in format mm:ss";
+        Class<?>[] groups() default {};
+        Class<? extends Payload>[] payload() default {};
+    }
+
+    @Component
+    public static class DurationFormatValidator implements ConstraintValidator<ValidDuration, String> {
+        @Override
+        public boolean isValid(String durationStr, ConstraintValidatorContext context) {
+            if (durationStr == null || durationStr.isEmpty()) {
+                return false;
+            }
+
+            if (!Arrays.stream(durationStr.split(":")).filter(f -> f.length() != 2).toList().isEmpty()) {
+                return false;
+            }
+
+            try {
+                long duration = stringToSeconds(durationStr);
+                return duration > 0;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+    }
+
+    public static long stringToSeconds(String durationString) {
+        String[] parts = durationString.split(":");
+        long hours = 0;
+        long minutes = 0;
+        long seconds = 0;
+
+        switch (parts.length) {
+            case 3:
+                hours = Integer.parseInt(parts[0]);
+                minutes = Integer.parseInt(parts[1]);
+                seconds = Integer.parseInt(parts[2]);
+                break;
+            case 2:
+                minutes = Integer.parseInt(parts[0]);
+                seconds = Integer.parseInt(parts[1]);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid duration format. Expected format: 'hh:mm:ss' or 'mm:ss'");
+        }
+
+        if (seconds >= 60) {
+            minutes += seconds / 60;
+            seconds = seconds % 60;
+        }
+        if (minutes >= 60) {
+            hours += minutes / 60;
+            minutes = minutes % 60;
+        }
+        return hours * 3600L + minutes * 60L + seconds;
+    }
 }

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Service
 public class ResourceService {
-    private ResourceRepository resourceRepository;
+    private final ResourceRepository resourceRepository;
 
     public ResourceService(ResourceRepository resourceRepository) {
         this.resourceRepository = resourceRepository;

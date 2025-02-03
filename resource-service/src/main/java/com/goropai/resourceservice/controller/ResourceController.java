@@ -4,15 +4,17 @@ import com.goropai.resourceservice.entity.Mp3File;
 import com.goropai.resourceservice.entity.dto.ResourceIdResponse;
 import com.goropai.resourceservice.entity.dto.ResourceIdsResponse;
 import com.goropai.resourceservice.service.MetadataService;
+import com.goropai.resourceservice.service.exceptions.CsvValidationException;
+import com.goropai.resourceservice.service.exceptions.ResourceNotFoundException;
 import com.goropai.resourceservice.service.ResourceService;
 import com.goropai.songservice.entity.Mp3Metadata;
-import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ValidationException;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,7 +22,6 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -47,24 +48,23 @@ public class ResourceController {
     @Transactional
     public Mono<ResponseEntity<ResourceIdResponse>> uploadAudio(@RequestBody byte[] audioData) {
         return Mono.fromCallable(() -> resourceService.save(audioData))
-                .onErrorResume(PersistenceException.class, ex -> Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)))
                 .flatMap(savedFile ->
                         {
                             try {
                                 return metadataService.parseAndSave(savedFile.getId(), savedFile.getData())
                                         .onErrorResume(
                                                 ex -> {
-                                                    try {
-                                                        resourceService.deleteById(savedFile.getId());
-                                                    }
-                                                    catch (Exception e) {
-                                                        return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
-                                                    }
-                                                    if (ex instanceof WebClientResponseException) {
-                                                        return Mono.error(ex);
+                                                    resourceService.deleteById(savedFile.getId());
+                                                    WebClientResponseException webClientException = (WebClientResponseException) ex;
+                                                    if (webClientException.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                                                        throw new ValidationException(webClientException.getResponseBodyAsString());
                                                     }
                                                     else {
-                                                        return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
+                                                        try {
+                                                            throw ex;
+                                                        } catch (Throwable e) {
+                                                            throw new RuntimeException(e);
+                                                        }
                                                     }
                                                 }
                                         );
@@ -75,8 +75,7 @@ public class ResourceController {
                 )
                 .map(success -> ResponseEntity.status(HttpStatus.OK).body(
                         new ResourceIdResponse(Optional.ofNullable(success.getBody())
-                                .map(Mp3Metadata::getId).orElse(null))))
-                .onErrorResume(ResponseStatusException.class, ex -> Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)));
+                                .map(Mp3Metadata::getId).orElse(null))));
     }
 
     /**
@@ -90,25 +89,12 @@ public class ResourceController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/resources/{id}")
-    public ResponseEntity<byte[]> getAudio(@PathVariable @Validated int id) {
-        try {
-            Optional<Mp3File> found = resourceService.getById(id);
-            return found.map(m -> ResponseEntity.status(HttpStatus.OK)
-                            .contentType(MediaType.parseMediaType("audio/mpeg"))
-                            .body(m.getData()))
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body("{\"404\": \"Resource not found\"}".getBytes()));
-        }
-        catch (PersistenceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleTypeMismatch(MethodArgumentNotValidException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Objects.requireNonNull(e.getBindingResult()
-                .getFieldError()).getDefaultMessage());
+    public ResponseEntity<byte[]> getAudio(@PathVariable @Min (value = 1) @Validated int id) {
+        Optional<Mp3File> found = resourceService.getById(id);
+        return found.map(m -> ResponseEntity.status(HttpStatus.OK)
+                        .contentType(MediaType.parseMediaType("audio/mpeg"))
+                        .body(m.getData()))
+                .orElseThrow(() -> new ResourceNotFoundException(id));
     }
 
     /**
@@ -123,22 +109,22 @@ public class ResourceController {
     @DeleteMapping(path = "/resources")
     @Transactional
     public ResponseEntity<ResourceIdsResponse> deleteAudio(@RequestParam(name = "id") String ids) {
-        if (ids.length() <= 0 || ids.length() > 200) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (ids.isEmpty() || ids.length() > 200) {
+            throw new CsvValidationException("CSV string length is out of bounds [0, 200]");
         }
-        List<Integer> correctIds = Stream.of(ids.split(","))
-                .map(Integer::valueOf)
-                .filter(resourceService::existsById)
-                .toList();
-        if (correctIds.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResourceIdsResponse());
-        }
+        List<Integer> correctIds;
         try {
+             correctIds = Stream.of(ids.split(","))
+                    .map(Integer::valueOf)
+                    .filter(resourceService::existsById)
+                    .toList();
+        }
+        catch (NumberFormatException e) {
+            throw new CsvValidationException("CSV contains invalid characters");
+        }
+        if (!correctIds.isEmpty()) {
             correctIds.forEach(resourceService::deleteById);
             metadataService.deleteMetadata(correctIds).subscribe();
-        }
-        catch (PersistenceException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
         return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdsResponse(correctIds));
     }

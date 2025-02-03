@@ -13,7 +13,6 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,16 +32,14 @@ public class MetadataService {
 
             tika.parse(input, metadata);
 
-            return webClient.method(HttpMethod.POST).uri(uriBuilder ->
-                    uriBuilder.path("/songs")
-                            .queryParam("id", id)
-                            .queryParam("name", metadata.get("dc:title"))
-                            .queryParam("artist", metadata.get("dc:creator"))
-                            .queryParam("album", metadata.get("xmpDM:album"))
-                            .queryParam("duration", metadata.get("xmpDM:duration"))
-                            .queryParam("year", metadata.get("xmpDM:releaseDate"))
-                            .build()
-            ).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+            return webClient.method(HttpMethod.POST).uri("/songs")
+                    .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+                    .bodyValue(new Mp3Metadata(id,
+                            metadata.get("dc:creator"),
+                            metadata.get("dc:title"),
+                            metadata.get("xmpDM:album"),
+                            metadata.get("xmpDM:releaseDate"),
+                            Mp3Metadata.getDurationFormatted(Double.parseDouble(metadata.get("xmpDM:duration")))))
                     .retrieve().toEntity(Mp3Metadata.class);
         }
     }

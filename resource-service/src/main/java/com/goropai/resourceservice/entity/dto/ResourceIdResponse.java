@@ -3,7 +3,7 @@ package com.goropai.resourceservice.entity.dto;
 public class ResourceIdResponse {
     private Integer id;
 
-    public ResourceIdResponse() {} // Important: No-args constructor for Jackson
+    public ResourceIdResponse() {}
 
     public ResourceIdResponse(Integer id) {
         this.id = id;
