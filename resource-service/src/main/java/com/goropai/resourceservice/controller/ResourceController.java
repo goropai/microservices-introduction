@@ -90,7 +90,7 @@ public class ResourceController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/resources/{id}")
-    public ResponseEntity<byte[]> getAudio(@PathVariable @Min (value = 1) @Validated int id) {
+    public ResponseEntity<byte[]> getAudio(@PathVariable @Min (value = 1) @Validated Integer id) {
         Optional<Mp3File> found = resourceService.getById(id);
         return found.map(m -> ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.parseMediaType("audio/mpeg"))

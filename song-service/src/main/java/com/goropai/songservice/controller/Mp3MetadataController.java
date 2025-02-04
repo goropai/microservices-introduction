@@ -1,12 +1,10 @@
 package com.goropai.songservice.controller;
 
-import com.goropai.songservice.entity.Mp3Metadata;
 import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import com.goropai.songservice.entity.dto.SongIdsResponse;
 import com.goropai.songservice.service.Mp3MetadataService;
 import com.goropai.songservice.service.exception.CsvValidationException;
 import com.goropai.songservice.service.exception.MetadataAlreadyExistException;
-import com.goropai.songservice.service.exception.MetadataNotFoundException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,7 +13,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 @RestController
@@ -51,9 +48,6 @@ public class Mp3MetadataController {
     }*/
     @PostMapping(path = "/songs")
     public ResponseEntity<Mp3MetadataDto> save(@Valid @RequestBody Mp3MetadataDto metadataDto) {
-        if (mp3MetadataService.existsById(metadataDto.getId())) {
-            throw new MetadataAlreadyExistException(metadataDto.getId());
-        }
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadataDto));
     }
 
@@ -68,10 +62,8 @@ public class Mp3MetadataController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/songs/{id}")
-    public ResponseEntity<Mp3Metadata> getById(@PathVariable @Validated final int id) {
-        Optional<Mp3Metadata> found = mp3MetadataService.getById(id);
-        return found.map(m -> ResponseEntity.status(HttpStatus.OK).body(m))
-                .orElseThrow(() -> new MetadataNotFoundException(id));
+    public ResponseEntity<Mp3MetadataDto> getById(@PathVariable @Validated final Integer id) {
+        return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.getById(id));
     }
 
 
