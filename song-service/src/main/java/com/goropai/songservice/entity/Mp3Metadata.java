@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import static java.lang.annotation.ElementType.*;
 
 @Entity
-@Table(name = "song", schema = "songs")
+@Table(name = "song")
 public class Mp3Metadata {
     @Id
     @Column(name = "id", nullable = false)
@@ -180,42 +180,17 @@ public class Mp3Metadata {
             }
 
             try {
-                long duration = stringToSeconds(durationStr);
-                return duration > 0;
-            } catch (NumberFormatException e) {
+                String[] parts = durationStr.split(":");
+                long minutes = Integer.parseInt(parts[0]);
+                long seconds = Integer.parseInt(parts[1]);
+                if (minutes >= 60 || seconds >= 60) {
+                    return false;
+                }
+                return minutes * 60L + seconds > 0;
+            }
+            catch (NumberFormatException e) {
                 return false;
             }
         }
-    }
-
-    public static long stringToSeconds(String durationString) {
-        String[] parts = durationString.split(":");
-        long hours = 0;
-        long minutes = 0;
-        long seconds = 0;
-
-        switch (parts.length) {
-            case 3:
-                hours = Integer.parseInt(parts[0]);
-                minutes = Integer.parseInt(parts[1]);
-                seconds = Integer.parseInt(parts[2]);
-                break;
-            case 2:
-                minutes = Integer.parseInt(parts[0]);
-                seconds = Integer.parseInt(parts[1]);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid duration format. Expected format: 'hh:mm:ss' or 'mm:ss'");
-        }
-
-        if (seconds >= 60) {
-            minutes += seconds / 60;
-            seconds = seconds % 60;
-        }
-        if (minutes >= 60) {
-            hours += minutes / 60;
-            minutes = minutes % 60;
-        }
-        return hours * 3600L + minutes * 60L + seconds;
     }
 }

@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.lang.annotation.*;
 
 @Entity
-@Table(name = "resource", schema = "resources")
+    @Table(name = "resource")
 public class Mp3File {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
