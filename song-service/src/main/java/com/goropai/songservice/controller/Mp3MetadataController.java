@@ -1,12 +1,14 @@
 package com.goropai.songservice.controller;
 
 import com.goropai.songservice.entity.Mp3Metadata;
+import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import com.goropai.songservice.entity.dto.SongIdsResponse;
 import com.goropai.songservice.service.Mp3MetadataService;
 import com.goropai.songservice.service.exception.CsvValidationException;
 import com.goropai.songservice.service.exception.MetadataAlreadyExistException;
 import com.goropai.songservice.service.exception.MetadataNotFoundException;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -39,12 +41,21 @@ public class Mp3MetadataController {
      * 409 Conflict – Metadata for this ID already exists.
      * 500 Internal Server Error – An error occurred on the server.
      */
-    @PostMapping(path = "/songs")
+    /*@PostMapping(path = "/songs")
     public ResponseEntity<Mp3Metadata> save(@RequestBody Mp3Metadata metadata) {
         if (mp3MetadataService.existsById(metadata.getId())) {
             throw new MetadataAlreadyExistException(metadata.getId());
         }
         metadata.validate();
+        return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
+    }*/
+    @PostMapping(path = "/songs")
+    public ResponseEntity<Mp3Metadata> save(@Valid @RequestBody Mp3MetadataDto metadataDto) {
+        if (mp3MetadataService.existsById(metadataDto.getId())) {
+            throw new MetadataAlreadyExistException(metadataDto.getId());
+        }
+
+        Mp3Metadata metadata = metadataDto.toMp3Metadata();
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
     }
 
