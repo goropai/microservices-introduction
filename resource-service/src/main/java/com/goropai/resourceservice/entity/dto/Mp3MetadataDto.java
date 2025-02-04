@@ -1,31 +1,26 @@
 package com.goropai.resourceservice.entity.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
 public class Mp3MetadataDto {
-    @NotNull(message = "The ID is invalid: it is null")
     private Integer id;
 
-    @NotBlank(message = "The Artist is required")
-    @Size(max = 100, message = "The Artist should be max 100 characters")
     private String artist;
 
-    @NotBlank(message = "The Name is required")
-    @Size(max = 100, message = "The Name should be max 100 characters")
     private String name;
 
-    @NotBlank(message = "The Album is required")
-    @Size(max = 100, message = "The Album should be max 100 characters")
     private String album;
 
-    @NotNull(message = "The Year is required")
-    @Mp3Metadata.ValidYear
     private String year;
 
-    @Mp3Metadata.ValidDuration
     private String duration;
+
+    public Mp3MetadataDto(int id, String artist, String name, String album, String year, String durationFormatted) {
+        this.id = id;
+        this.artist = artist;
+        this.name = name;
+        this.album = album;
+        this.year = year;
+        this.duration = durationFormatted;
+    }
 
     public Integer getId() {
         return id;
@@ -73,9 +68,5 @@ public class Mp3MetadataDto {
 
     public void setDuration(String duration) {
         this.duration = duration;
-    }
-
-    public Mp3Metadata toMp3Metadata() {
-        return new Mp3Metadata(this.id, this.artist, this.name, this.album, this.year, this.duration);
     }
 }

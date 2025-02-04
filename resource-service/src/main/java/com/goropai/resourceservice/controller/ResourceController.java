@@ -1,6 +1,7 @@
 package com.goropai.resourceservice.controller;
 
 import com.goropai.resourceservice.entity.Mp3File;
+import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import com.goropai.resourceservice.entity.dto.ResourceIdResponse;
 import com.goropai.resourceservice.entity.dto.ResourceIdsResponse;
 import com.goropai.resourceservice.service.MetadataService;
@@ -75,7 +76,7 @@ public class ResourceController {
                 )
                 .map(success -> ResponseEntity.status(HttpStatus.OK).body(
                         new ResourceIdResponse(Optional.ofNullable(success.getBody())
-                                .map(Mp3Metadata::getId).orElse(null))));
+                                .map(Mp3MetadataDto::getId).orElse(null))));
     }
 
     /**

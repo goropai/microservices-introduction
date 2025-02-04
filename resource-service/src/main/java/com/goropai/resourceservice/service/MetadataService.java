@@ -1,5 +1,6 @@
 package com.goropai.resourceservice.service;
 
+import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
@@ -12,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,23 +26,26 @@ public class MetadataService {
     }
 
     @Transactional
-    public Mono<ResponseEntity<Mp3Metadata>> parseAndSave(int id, byte[] data) throws IOException {
+    public Mono<ResponseEntity<Mp3MetadataDto>> parseAndSave(int id, byte[] data) throws IOException {
         try (ByteArrayInputStream input = new ByteArrayInputStream(data)) {
             Tika tika = new Tika();
             Metadata metadata = new Metadata();
-
             tika.parse(input, metadata);
-
             return webClient.method(HttpMethod.POST).uri("/songs")
                     .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-                    .bodyValue(new Mp3Metadata(id,
+                    .bodyValue(new Mp3MetadataDto(id,
                             metadata.get("dc:creator"),
                             metadata.get("dc:title"),
                             metadata.get("xmpDM:album"),
                             metadata.get("xmpDM:releaseDate"),
-                            Mp3Metadata.getDurationFormatted(Double.parseDouble(metadata.get("xmpDM:duration")))))
-                    .retrieve().toEntity(Mp3Metadata.class);
+                            getDurationFormatted(Double.parseDouble(metadata.get("xmpDM:duration")))))
+                    .retrieve().toEntity(Mp3MetadataDto.class);
         }
+    }
+
+    public static String getDurationFormatted(double duration) {
+        Duration d = Duration.ofSeconds((long) duration);
+        return String.format("%02d:%02d", d.toMinutesPart(), d.toSecondsPart());
     }
 
     @Transactional
