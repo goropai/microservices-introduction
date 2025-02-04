@@ -13,6 +13,9 @@ public class Mp3MetadataDto {
 
     private String duration;
 
+    public Mp3MetadataDto() {
+    }
+
     public Mp3MetadataDto(int id, String artist, String name, String album, String year, String durationFormatted) {
         this.id = id;
         this.artist = artist;

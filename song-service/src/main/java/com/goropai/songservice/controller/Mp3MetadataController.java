@@ -7,6 +7,7 @@ import com.goropai.songservice.service.exception.CsvValidationException;
 import com.goropai.songservice.service.exception.MetadataAlreadyExistException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -62,7 +63,7 @@ public class Mp3MetadataController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/songs/{id}")
-    public ResponseEntity<Mp3MetadataDto> getById(@PathVariable @Validated final Integer id) {
+    public ResponseEntity<Mp3MetadataDto> getById(@PathVariable @Min(value = 1) @Validated final Integer id) {
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.getById(id));
     }
 

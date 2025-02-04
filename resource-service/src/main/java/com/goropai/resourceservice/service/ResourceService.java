@@ -1,7 +1,9 @@
 package com.goropai.resourceservice.service;
 
 import com.goropai.resourceservice.entity.Mp3File;
+import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import com.goropai.resourceservice.repository.ResourceRepository;
+import com.goropai.resourceservice.service.exceptions.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,8 +20,9 @@ public class ResourceService {
         return resourceRepository.save(new Mp3File(data));
     }
 
-    public Optional<Mp3File> getById(int id) {
-        return resourceRepository.findById(id);
+    public Mp3FileDto getById(int id) {
+        return resourceRepository.findById(id).map(Mp3File::toDto)
+                .orElseThrow(() -> new ResourceNotFoundException(id));
     }
 
     public boolean existsById(int id) {

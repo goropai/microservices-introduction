@@ -1,5 +1,6 @@
 package com.goropai.resourceservice.entity;
 
+import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import jakarta.persistence.*;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -46,6 +47,13 @@ public class Mp3File {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public Mp3FileDto toDto() {
+        Mp3FileDto dto = new Mp3FileDto();
+        dto.setId(id);
+        dto.setData(data);
+        return dto;
     }
 
 }

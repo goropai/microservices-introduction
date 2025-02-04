@@ -1,6 +1,7 @@
 package com.goropai.resourceservice.controller;
 
 import com.goropai.resourceservice.entity.Mp3File;
+import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import com.goropai.resourceservice.entity.dto.ResourceIdResponse;
 import com.goropai.resourceservice.entity.dto.ResourceIdsResponse;
@@ -90,12 +91,11 @@ public class ResourceController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/resources/{id}")
-    public ResponseEntity<byte[]> getAudio(@PathVariable @Min (value = 1) @Validated Integer id) {
-        Optional<Mp3File> found = resourceService.getById(id);
-        return found.map(m -> ResponseEntity.status(HttpStatus.OK)
+    public ResponseEntity<byte[]> getAudio(@PathVariable @Min(value = 1) @Validated Integer id) {
+        Mp3FileDto found = resourceService.getById(id);
+        return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.parseMediaType("audio/mpeg"))
-                        .body(m.getData()))
-                .orElseThrow(() -> new ResourceNotFoundException(id));
+                        .body(found.getData());
     }
 
     /**
