@@ -1,6 +1,5 @@
 package com.goropai.resourceservice.service;
 
-import com.goropai.songservice.entity.Mp3Metadata;
 import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;

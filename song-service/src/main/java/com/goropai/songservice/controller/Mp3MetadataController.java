@@ -50,13 +50,11 @@ public class Mp3MetadataController {
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
     }*/
     @PostMapping(path = "/songs")
-    public ResponseEntity<Mp3Metadata> save(@Valid @RequestBody Mp3MetadataDto metadataDto) {
+    public ResponseEntity<Mp3MetadataDto> save(@Valid @RequestBody Mp3MetadataDto metadataDto) {
         if (mp3MetadataService.existsById(metadataDto.getId())) {
             throw new MetadataAlreadyExistException(metadataDto.getId());
         }
-
-        Mp3Metadata metadata = metadataDto.toMp3Metadata();
-        return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
+        return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadataDto));
     }
 
     /**
