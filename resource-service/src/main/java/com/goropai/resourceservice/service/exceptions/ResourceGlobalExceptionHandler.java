@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -90,9 +91,9 @@ public class ResourceGlobalExceptionHandler {
                 LinkedHashMap::new));
     }
 
-    @ExceptionHandler(value = {WebClientException.class})
-    public ResponseEntity<Object> handle(WebClientException ex) {
+    @ExceptionHandler(value = {WebClientResponseException.class})
+    public ResponseEntity<Object> handle(WebClientResponseException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
-                .body(new SimpleErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
+                .body(new ValidationErrorResponse("Validation error", getValidations(ex.getResponseBodyAsString()), "400"));
     }
 }

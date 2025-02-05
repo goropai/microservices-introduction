@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class ResourceController {
@@ -40,20 +41,9 @@ public class ResourceController {
     @Transactional
     public ResponseEntity<ResourceIdResponse> uploadAudio(@RequestBody byte[] audioData) throws IOException {
         Mp3FileDto savedFile = resourceService.save(new Mp3FileDto(audioData));
-        Mp3MetadataDto result = null;
-        try {
-            result = metadataService.parseAndSave(savedFile).block();
-        }
-        catch (Exception e) {
-            resourceService.deleteById(savedFile.getId());
-            throw e;
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdResponse(result.getId()));
-
-//        WebClientResponseException webClientException = (WebClientResponseException) ex;
-//        if (webClientException.getStatusCode() == HttpStatus.BAD_REQUEST) {
-//            throw new ValidationException(webClientException.getResponseBodyAsString());
-//        }
+        Mp3MetadataDto result = metadataService.parseAndSave(savedFile).block();
+        return ResponseEntity.status(HttpStatus.OK).body(
+                new ResourceIdResponse(Optional.ofNullable(result).map(Mp3MetadataDto::getId).orElse(null)));
     }
 
     /**
