@@ -3,11 +3,14 @@ package com.goropai.songservice.service;
 import com.goropai.songservice.entity.Mp3Metadata;
 import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import com.goropai.songservice.repository.Mp3MetadataRepository;
+import com.goropai.songservice.service.exception.CsvValidationException;
 import com.goropai.songservice.service.exception.MetadataAlreadyExistException;
 import com.goropai.songservice.service.exception.MetadataNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 public class Mp3MetadataService {
@@ -46,7 +49,25 @@ public class Mp3MetadataService {
         return savedMetadataDto;
     }
 
-    public void deleteById(Integer integer) {
-        mp3MetadataRepository.deleteById(integer);
+    public List<Integer> deleteByIds(String ids) {
+        if (ids.isEmpty() || ids.length() > 200) {
+            throw new CsvValidationException("CSV string length is out of bounds [0, 200]");
+        }
+        List<Integer> correctIds;
+        try {
+            correctIds = Stream.of(ids.split(","))
+                    .map(Integer::valueOf)
+                    .filter(this::existsById)
+                    .toList();
+        }
+        catch (NumberFormatException e) {
+            throw new CsvValidationException("CSV should be a comma-separated list of integers");
+        }
+        correctIds.forEach(this::deleteById);
+        return correctIds;
+    }
+
+    public void deleteById(Integer id) {
+        mp3MetadataRepository.deleteById(id);
     }
 }

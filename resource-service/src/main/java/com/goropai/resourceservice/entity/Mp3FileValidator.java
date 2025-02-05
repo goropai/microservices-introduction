@@ -1,10 +1,11 @@
 package com.goropai.resourceservice.entity;
 
+import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.apache.tika.Tika;
 
-public class Mp3FileValidator implements ConstraintValidator<ValidMp3File, byte[]> {
+public class Mp3FileValidator implements ConstraintValidator<Mp3FileDto.ValidMp3File, byte[]> {
 
     private final Tika tika;
 

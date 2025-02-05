@@ -1,15 +1,11 @@
 package com.goropai.resourceservice.controller;
 
-import com.goropai.resourceservice.entity.Mp3File;
 import com.goropai.resourceservice.entity.dto.Mp3FileDto;
-import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import com.goropai.resourceservice.entity.dto.ResourceIdResponse;
 import com.goropai.resourceservice.entity.dto.ResourceIdsResponse;
 import com.goropai.resourceservice.service.MetadataService;
-import com.goropai.resourceservice.service.exceptions.CsvValidationException;
-import com.goropai.resourceservice.service.exceptions.ResourceNotFoundException;
 import com.goropai.resourceservice.service.ResourceService;
-import com.goropai.songservice.entity.Mp3Metadata;
+import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import jakarta.validation.constraints.Min;
@@ -23,9 +19,10 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @RestController
 public class ResourceController {
@@ -48,36 +45,22 @@ public class ResourceController {
      */
     @PostMapping(path = "/resources", consumes = "audio/mpeg")
     @Transactional
-    public Mono<ResponseEntity<ResourceIdResponse>> uploadAudio(@RequestBody byte[] audioData) {
-        return Mono.fromCallable(() -> resourceService.save(audioData))
-                .flatMap(savedFile ->
-                        {
-                            try {
-                                return metadataService.parseAndSave(savedFile.getId(), savedFile.getData())
-                                        .onErrorResume(
-                                                ex -> {
-                                                    resourceService.deleteById(savedFile.getId());
-                                                    WebClientResponseException webClientException = (WebClientResponseException) ex;
-                                                    if (webClientException.getStatusCode() == HttpStatus.BAD_REQUEST) {
-                                                        throw new ValidationException(webClientException.getResponseBodyAsString());
-                                                    }
-                                                    else {
-                                                        try {
-                                                            throw ex;
-                                                        } catch (Throwable e) {
-                                                            throw new RuntimeException(e);
-                                                        }
-                                                    }
-                                                }
-                                        );
-                            } catch (IOException e) {
-                                return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
-                            }
-                        }
-                )
-                .map(success -> ResponseEntity.status(HttpStatus.OK).body(
-                        new ResourceIdResponse(Optional.ofNullable(success.getBody())
-                                .map(Mp3MetadataDto::getId).orElse(null))));
+    public ResponseEntity<ResourceIdResponse> uploadAudio(@RequestBody byte[] audioData) throws IOException {
+        Mp3FileDto savedFile = resourceService.save(new Mp3FileDto(audioData));
+        Mp3MetadataDto result = null;
+        try {
+            result = metadataService.parseAndSave(savedFile).block();
+        }
+        catch (Exception e) {
+            resourceService.deleteById(savedFile.getId());
+            throw e;
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdResponse(result.getId()));
+
+//        WebClientResponseException webClientException = (WebClientResponseException) ex;
+//        if (webClientException.getStatusCode() == HttpStatus.BAD_REQUEST) {
+//            throw new ValidationException(webClientException.getResponseBodyAsString());
+//        }
     }
 
     /**
@@ -91,7 +74,8 @@ public class ResourceController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/resources/{id}")
-    public ResponseEntity<byte[]> getAudio(@PathVariable @Min(value = 1) @Validated Integer id) {
+    public ResponseEntity<byte[]> getAudio(@PathVariable @Min(value = 1, message = "Resource ID should be > 0")
+                                               @Validated Integer id) {
         Mp3FileDto found = resourceService.getById(id);
         return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.parseMediaType("audio/mpeg"))
@@ -110,23 +94,8 @@ public class ResourceController {
     @DeleteMapping(path = "/resources")
     @Transactional
     public ResponseEntity<ResourceIdsResponse> deleteAudio(@RequestParam(name = "id") String ids) {
-        if (ids.isEmpty() || ids.length() > 200) {
-            throw new CsvValidationException("CSV string length is out of bounds [0, 200]");
-        }
-        List<Integer> correctIds;
-        try {
-             correctIds = Stream.of(ids.split(","))
-                    .map(Integer::valueOf)
-                    .filter(resourceService::existsById)
-                    .toList();
-        }
-        catch (NumberFormatException e) {
-            throw new CsvValidationException("CSV contains invalid characters");
-        }
-        if (!correctIds.isEmpty()) {
-            correctIds.forEach(resourceService::deleteById);
-            metadataService.deleteMetadata(correctIds).subscribe();
-        }
+        List<Integer> correctIds = resourceService.deleteByIds(ids);
+        metadataService.deleteMetadata(correctIds).subscribe();
         return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdsResponse(correctIds));
     }
 }

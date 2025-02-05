@@ -3,8 +3,6 @@ package com.goropai.songservice.controller;
 import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import com.goropai.songservice.entity.dto.SongIdsResponse;
 import com.goropai.songservice.service.Mp3MetadataService;
-import com.goropai.songservice.service.exception.CsvValidationException;
-import com.goropai.songservice.service.exception.MetadataAlreadyExistException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -12,9 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Stream;
 
 @RestController
 public class Mp3MetadataController {
@@ -63,7 +58,8 @@ public class Mp3MetadataController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @GetMapping(path = "/songs/{id}")
-    public ResponseEntity<Mp3MetadataDto> getById(@PathVariable @Min(value = 1) @Validated final Integer id) {
+    public ResponseEntity<Mp3MetadataDto> getById(@PathVariable @Min(value = 1, message = "Song ID should be > 0")
+                                                      @Validated final Integer id) {
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.getById(id));
     }
 
@@ -81,20 +77,6 @@ public class Mp3MetadataController {
     @DeleteMapping(path = "/songs")
     @Transactional
     public ResponseEntity<SongIdsResponse> deleteById(@RequestParam(name = "id") String ids) {
-        if (ids.isEmpty() || ids.length() > 200) {
-            throw new CsvValidationException("CSV string length is out of bounds [0, 200]");
-        }
-        List<Integer> correctIds;
-        try {
-            correctIds = Stream.of(ids.split(","))
-                    .map(Integer::valueOf)
-                    .filter(mp3MetadataService::existsById)
-                    .toList();
-        }
-        catch (NumberFormatException e) {
-            throw new CsvValidationException("CSV contains invalid characters");
-        }
-        correctIds.forEach(mp3MetadataService::deleteById);
-        return ResponseEntity.status(HttpStatus.OK).body(new SongIdsResponse(correctIds));
+        return ResponseEntity.status(HttpStatus.OK).body(new SongIdsResponse(mp3MetadataService.deleteByIds(ids)));
     }
 }

@@ -16,14 +16,9 @@ public class Mp3File {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "id", nullable = false)
-    @Min(value = 1, message = "The ID is invalid: it is negative or zero")
-    @Digits(integer = 10, fraction = 0, message = "The ID is invalid: it contains decimals")
-    @NotNull(message = "The ID is invalid: it is null")
     private Integer id;
 
     @Column(name = "data", nullable = false)
-    @NotNull(message = "The MP3 file is invalid: it is null")
-    @ValidMp3File
     private byte[] data;
 
     public Mp3File() {
@@ -31,6 +26,16 @@ public class Mp3File {
 
     public Mp3File(byte[] data) {
         this.data = data;
+    }
+
+    public Mp3File(Integer id, byte[] data) {
+        this.id = id;
+        this.data = data;
+    }
+
+    public Mp3File(Mp3FileDto dto) {
+        this.id = dto.getId();
+        this.data = dto.getData();
     }
 
     public Integer getId() {
@@ -55,15 +60,4 @@ public class Mp3File {
         dto.setData(data);
         return dto;
     }
-
-}
-
-@Documented
-@Constraint(validatedBy = Mp3FileValidator.class)
-@Target({ElementType.METHOD, ElementType.FIELD})
-@Retention(RetentionPolicy.RUNTIME)
-@interface ValidMp3File {
-    String message() default "The provided file is not a valid MP3";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
 }

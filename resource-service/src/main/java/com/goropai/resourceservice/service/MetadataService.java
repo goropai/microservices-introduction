@@ -1,6 +1,7 @@
 package com.goropai.resourceservice.service;
 
-import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
+import com.goropai.resourceservice.entity.dto.Mp3FileDto;
+import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
@@ -26,20 +27,20 @@ public class MetadataService {
     }
 
     @Transactional
-    public Mono<ResponseEntity<Mp3MetadataDto>> parseAndSave(int id, byte[] data) throws IOException {
-        try (ByteArrayInputStream input = new ByteArrayInputStream(data)) {
+    public Mono<Mp3MetadataDto> parseAndSave(Mp3FileDto mp3FileDto) throws IOException {
+        try (ByteArrayInputStream input = new ByteArrayInputStream(mp3FileDto.getData())) {
             Tika tika = new Tika();
             Metadata metadata = new Metadata();
             tika.parse(input, metadata);
             return webClient.method(HttpMethod.POST).uri("/songs")
                     .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-                    .bodyValue(new Mp3MetadataDto(id,
+                    .bodyValue(new Mp3MetadataDto(mp3FileDto.getId(),
                             metadata.get("dc:creator"),
                             metadata.get("dc:title"),
                             metadata.get("xmpDM:album"),
                             metadata.get("xmpDM:releaseDate"),
                             getDurationFormatted(Double.parseDouble(metadata.get("xmpDM:duration")))))
-                    .retrieve().toEntity(Mp3MetadataDto.class);
+                    .retrieve().bodyToMono(Mp3MetadataDto.class);
         }
     }
 
