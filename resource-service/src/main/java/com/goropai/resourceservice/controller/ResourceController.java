@@ -7,22 +7,15 @@ import com.goropai.resourceservice.service.MetadataService;
 import com.goropai.resourceservice.service.ResourceService;
 import com.goropai.songservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
-import jakarta.validation.ValidationException;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.server.ResponseStatusException;
-import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class ResourceController {
@@ -75,7 +68,7 @@ public class ResourceController {
      */
     @GetMapping(path = "/resources/{id}")
     public ResponseEntity<byte[]> getAudio(@PathVariable @Min(value = 1, message = "Resource ID should be > 0")
-                                               @Validated Integer id) {
+                                               @Valid Integer id) {
         Mp3FileDto found = resourceService.getById(id);
         return ResponseEntity.status(HttpStatus.OK)
                         .contentType(MediaType.parseMediaType("audio/mpeg"))

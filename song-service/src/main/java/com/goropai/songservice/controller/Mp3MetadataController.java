@@ -34,14 +34,6 @@ public class Mp3MetadataController {
      * 409 Conflict – Metadata for this ID already exists.
      * 500 Internal Server Error – An error occurred on the server.
      */
-    /*@PostMapping(path = "/songs")
-    public ResponseEntity<Mp3Metadata> save(@RequestBody Mp3Metadata metadata) {
-        if (mp3MetadataService.existsById(metadata.getId())) {
-            throw new MetadataAlreadyExistException(metadata.getId());
-        }
-        metadata.validate();
-        return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadata));
-    }*/
     @PostMapping(path = "/songs")
     public ResponseEntity<Mp3MetadataDto> save(@Valid @RequestBody Mp3MetadataDto metadataDto) {
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadataDto));

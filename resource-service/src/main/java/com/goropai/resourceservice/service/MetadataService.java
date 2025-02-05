@@ -51,6 +51,9 @@ public class MetadataService {
 
     @Transactional
     public Mono<ResponseEntity<List<Integer>>> deleteMetadata(List<Integer> ids) {
+        if (ids.isEmpty()) {
+            return Mono.empty();
+        }
         return webClient.method(HttpMethod.DELETE).uri(uriBuilder ->
                         uriBuilder.path("/songs")
                                 .queryParam("id", convertListToString(ids))
