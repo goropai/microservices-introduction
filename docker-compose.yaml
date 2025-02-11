@@ -2,22 +2,36 @@ version: "3.9"
 
 services:
   resources-db:
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: resources
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: 1233
+    image: postgres:16-alpine
+    env_file:
+      - .env.docker
+    volumes:
+      - ./db-resources-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
 
   songs-db:
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: songs
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: 1233
+    image: postgres:16-alpine
+    env_file:
+      - .env.docker
+    volumes:
+      - ./db-songs-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5433:5432"
+
+  resource-service:
+    env_file:
+      - .env.docker
+    build: ./resource-service
+    ports:
+      - "8080:8080"
+
+  song-service:
+    env_file:
+      - .env.docker
+    build: ./song-service
+    ports:
+      - "8082:8082"
 
 # Related settings for application.properties:
 # 
