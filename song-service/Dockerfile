@@ -13,6 +13,9 @@ RUN mvn clean package -DskipTests
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+
 COPY --from=build /app/target/*.jar song-service.jar
+COPY --from=build /app/target/*.jar ./lib/
+
 EXPOSE 8082
 CMD ["java","-jar","song-service.jar"]

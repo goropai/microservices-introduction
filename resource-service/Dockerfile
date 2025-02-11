@@ -13,6 +13,9 @@ RUN mvn clean package -DskipTests
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+
 COPY --from=build /app/target/*.jar resource-service.jar
+COPY --from=build /app/target/*.jar ./lib/
+
 EXPOSE 8080
 CMD ["java","-jar","resource-service.jar"]
