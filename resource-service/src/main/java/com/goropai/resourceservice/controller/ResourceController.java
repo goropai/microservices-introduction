@@ -5,7 +5,7 @@ import com.goropai.resourceservice.entity.dto.ResourceIdResponse;
 import com.goropai.resourceservice.entity.dto.ResourceIdsResponse;
 import com.goropai.resourceservice.service.MetadataService;
 import com.goropai.resourceservice.service.ResourceService;
-import com.goropai.songservice.entity.dto.Mp3MetadataDto;
+import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
