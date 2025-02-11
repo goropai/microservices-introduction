@@ -6,7 +6,7 @@ services:
     env_file:
       - .env.docker
     volumes:
-      - ./db-resources-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init-scripts/db-resources-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
 
@@ -15,7 +15,7 @@ services:
     env_file:
       - .env.docker
     volumes:
-      - ./db-songs-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init-scripts/db-songs-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5433:5432"
 

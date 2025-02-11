@@ -83,17 +83,4 @@ public class Mp3Metadata {
     public void setYear(String year) {
         this.year = year;
     }
-
-    /*public void validate() throws ValidationException {
-        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
-            Validator validator = factory.getValidator();
-            Set<ConstraintViolation<Mp3Metadata>> violations = validator.validate(this);
-            if (!violations.isEmpty()) {
-                String errorMessage = violations.stream()
-                        .map(v -> v.getPropertyPath() + ": " + v.getMessage())
-                        .collect(Collectors.joining(", "));
-                throw new ValidationException(errorMessage);
-            }
-        }
-    }*/
 }

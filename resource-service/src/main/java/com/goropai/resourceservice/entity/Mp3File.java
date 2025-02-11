@@ -2,13 +2,6 @@ package com.goropai.resourceservice.entity;
 
 import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import jakarta.persistence.*;
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-
-import java.lang.annotation.*;
 
 @Entity
     @Table(name = "resource")
