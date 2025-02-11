@@ -8,12 +8,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.*;
@@ -78,6 +78,12 @@ public class ResourceGlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         return ResponseEntity.badRequest().body(new ValidationErrorResponse("Validation error", errors, "400"));
+    }
+
+    @ExceptionHandler(value = {HttpMediaTypeNotSupportedException.class})
+    public ResponseEntity<Object> handleAll(HttpMediaTypeNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new SimpleErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
     }
 
     private Map<String, String> getValidations(String message) {
