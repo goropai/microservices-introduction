@@ -1,6 +1,10 @@
 # Build stage
 FROM eclipse-temurin:17-alpine AS build
 WORKDIR /app
+
+# Install Maven
+RUN apk add --no-cache maven
+
 COPY pom.xml .
 RUN mvn dependency:go-offline
 COPY src ./src
