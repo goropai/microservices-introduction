@@ -5,6 +5,7 @@ import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +23,8 @@ import java.util.stream.Collectors;
 public class MetadataService {
     private final WebClient webClient;
 
-    public MetadataService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8082").build();
+    public MetadataService(WebClient.Builder webClientBuilder, @Value("${SONG_SERVICE_URL}") String songServiceUrl) {
+        this.webClient = webClientBuilder.baseUrl(songServiceUrl).build();
     }
 
     @Transactional
