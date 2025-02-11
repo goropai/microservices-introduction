@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS resources (
+DROP TABLE IF EXISTS resources;
+
+CREATE TABLE resources (
     id SERIAL PRIMARY KEY,
     data BYTEA NOT NULL
 );

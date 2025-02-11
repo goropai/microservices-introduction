@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS songs (
+DROP TABLE IF EXISTS resources;
+
+CREATE TABLE songs (
     id SERIAL PRIMARY KEY,
     artist VARCHAR(100),
     name VARCHAR(100),
