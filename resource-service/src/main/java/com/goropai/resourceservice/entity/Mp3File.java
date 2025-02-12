@@ -4,7 +4,7 @@ import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import jakarta.persistence.*;
 
 @Entity
-    @Table(name = "resource")
+@Table(name = "resources")
 public class Mp3File {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
