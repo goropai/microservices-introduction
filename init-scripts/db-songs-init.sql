@@ -1,5 +1,3 @@
-CREATE DATABASE songs;
-\c songs;
 CREATE TABLE IF NOT EXISTS songs (
     id SERIAL PRIMARY KEY,
     artist VARCHAR(100),
