@@ -2,13 +2,13 @@ package com.goropai.resourceservice.service;
 
 import com.goropai.resourceservice.entity.dto.Mp3FileDto;
 import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
+import com.goropai.resourceservice.entity.dto.SongIdsResponse;
 import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class MetadataService {
     private final WebClient webClient;
 
-    public MetadataService(WebClient.Builder webClientBuilder, @Value("${SONG_SERVICE_URL}") String songServiceUrl) {
+    public MetadataService(WebClient.Builder webClientBuilder, @Value("${SONG_SERVICE_BASE_URL}") String songServiceUrl) {
         this.webClient = webClientBuilder.baseUrl(songServiceUrl).build();
     }
 
@@ -51,7 +51,7 @@ public class MetadataService {
     }
 
     @Transactional
-    public Mono<ResponseEntity<List<Integer>>> deleteMetadata(List<Integer> ids) {
+    public Mono<SongIdsResponse> deleteMetadata(List<Integer> ids) {
         if (ids.isEmpty()) {
             return Mono.empty();
         }
@@ -60,7 +60,7 @@ public class MetadataService {
                                 .queryParam("id", convertListToString(ids))
                                 .build())
                 .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-                .retrieve().toEntityList(Integer.class);
+                .retrieve().bodyToMono(SongIdsResponse.class);
     }
 
     private String convertListToString(List<Integer> list) {
