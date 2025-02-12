@@ -3,7 +3,7 @@ package com.goropai.songservice.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "song")
+@Table(name = "songs")
 public class Mp3Metadata {
     @Id
     @Column(name = "id", nullable = false)
