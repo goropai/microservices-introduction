@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 @Table(name = "songs")
 public class Mp3Metadata {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
