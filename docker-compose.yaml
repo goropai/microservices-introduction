@@ -1,10 +1,10 @@
 services:
   resources-db:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: resources
     env_file:
-      - .env.docker
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB_RESOURCES}
     volumes:
       - ./init-scripts/db-resources-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
@@ -12,10 +12,10 @@ services:
 
   songs-db:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: songs
     env_file:
-      - .env.docker
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB_SONGS}
     volumes:
       - ./init-scripts/db-songs-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
@@ -23,7 +23,7 @@ services:
 
   resource-service:
     env_file:
-      - .env.docker
+      - .env
     build: ./resource-service
     ports:
       - "8080:8080"
@@ -32,7 +32,7 @@ services:
 
   song-service:
     env_file:
-      - .env.docker
+      - .env
     build: ./song-service
     ports:
       - "8082:8082"
