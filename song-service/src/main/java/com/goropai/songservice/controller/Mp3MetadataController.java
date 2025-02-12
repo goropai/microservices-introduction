@@ -35,6 +35,7 @@ public class Mp3MetadataController {
      * 500 Internal Server Error – An error occurred on the server.
      */
     @PostMapping(path = "/songs")
+    @Transactional
     public ResponseEntity<Mp3MetadataDto> save(@Valid @RequestBody Mp3MetadataDto metadataDto) {
         return ResponseEntity.status(HttpStatus.OK).body(mp3MetadataService.addMp3Metadata(metadataDto));
     }
