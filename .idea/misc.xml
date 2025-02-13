@@ -11,6 +11,7 @@
         <option value="$PROJECT_DIR$/resource-service/pom.xml" />
         <option value="$PROJECT_DIR$/song-service/pom.xml" />
         <option value="$PROJECT_DIR$/naming-server/pom.xml" />
+        <option value="$PROJECT_DIR$/api-gateway/pom.xml" />
       </list>
     </option>
   </component>

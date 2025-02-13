@@ -6,10 +6,17 @@ services:
     ports:
       - "8761:8761"
     environment:
-      #SPRING_APPLICATION_NAME: naming-server
-      #SERVER_PORT: 8761
       EUREKA_CLIENT_REGISTER_WITH_EUREKA: false
       EUREKA_CLIENT_FETCH_REGISTRY: false
+
+  api-gateway:
+    env_file:
+      - .env
+    build: ./api-gateway
+    ports:
+      - "8765:8765"
+    depends_on:
+      - naming-server
 
   resources-db:
     image: postgres:16-alpine
@@ -52,4 +59,5 @@ services:
     depends_on:
       - songs-db
       - naming-server
-
+    #deploy:
+      #replicas: 2
