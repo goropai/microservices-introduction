@@ -1,4 +1,16 @@
 services:
+  naming-server:
+    env_file:
+      - .env
+    build: ./naming-server
+    ports:
+      - "8761:8761"
+    environment:
+      #SPRING_APPLICATION_NAME: naming-server
+      #SERVER_PORT: 8761
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: false
+      EUREKA_CLIENT_FETCH_REGISTRY: false
+
   resources-db:
     image: postgres:16-alpine
     env_file:
@@ -29,6 +41,7 @@ services:
       - "8080:8080"
     depends_on:
       - resources-db
+      - naming-server
 
   song-service:
     env_file:
@@ -38,15 +51,5 @@ services:
       - "8082:8082"
     depends_on:
       - songs-db
+      - naming-server
 
-# Related settings for application.properties:
-# 
-# For resource-service:
-# spring.datasource.url=jdbc:postgresql://localhost:5432/resources
-# spring.datasource.username=root
-# spring.datasource.password=1233
-#
-# For song-service:
-# spring.datasource.url=jdbc:postgresql://localhost:5433/songs
-# spring.datasource.username=root
-# spring.datasource.password=1233
