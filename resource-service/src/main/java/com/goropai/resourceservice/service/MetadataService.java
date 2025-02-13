@@ -6,12 +6,7 @@ import com.goropai.resourceservice.entity.dto.SongIdsResponse;
 import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,27 +16,24 @@ import java.util.stream.Collectors;
 
 @Service
 public class MetadataService {
-    private final WebClient webClient;
+    private final SongServiceProxy songServiceProxy;
 
-    public MetadataService(WebClient.Builder webClientBuilder, @Value("${SONG_SERVICE_BASE_URL}") String songServiceUrl) {
-        this.webClient = webClientBuilder.baseUrl(songServiceUrl).build();
+    public MetadataService(SongServiceProxy songServiceProxy) {
+        this.songServiceProxy = songServiceProxy;
     }
 
     @Transactional
-    public Mono<Mp3MetadataDto> parseAndSave(Mp3FileDto mp3FileDto) throws IOException {
+    public Mp3MetadataDto parseAndSave(Mp3FileDto mp3FileDto) throws IOException {
         try (ByteArrayInputStream input = new ByteArrayInputStream(mp3FileDto.getData())) {
             Tika tika = new Tika();
             Metadata metadata = new Metadata();
             tika.parse(input, metadata);
-            return webClient.method(HttpMethod.POST).uri("/songs")
-                    .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-                    .bodyValue(new Mp3MetadataDto(mp3FileDto.getId(),
+            return songServiceProxy.save(new Mp3MetadataDto(mp3FileDto.getId(),
                             metadata.get("dc:creator"),
                             metadata.get("dc:title"),
                             metadata.get("xmpDM:album"),
                             metadata.get("xmpDM:releaseDate"),
-                            getDurationFormatted(Double.parseDouble(metadata.get("xmpDM:duration")))))
-                    .retrieve().bodyToMono(Mp3MetadataDto.class);
+                            getDurationFormatted(Double.parseDouble(metadata.get("xmpDM:duration"))))).getBody();
         }
     }
 
@@ -51,16 +43,11 @@ public class MetadataService {
     }
 
     @Transactional
-    public Mono<SongIdsResponse> deleteMetadata(List<Integer> ids) {
+    public SongIdsResponse deleteMetadata(List<Integer> ids) {
         if (ids.isEmpty()) {
-            return Mono.empty();
+            return new SongIdsResponse();
         }
-        return webClient.method(HttpMethod.DELETE).uri(uriBuilder ->
-                        uriBuilder.path("/songs")
-                                .queryParam("id", convertListToString(ids))
-                                .build())
-                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-                .retrieve().bodyToMono(SongIdsResponse.class);
+        return songServiceProxy.deleteById(convertListToString(ids)).getBody();
     }
 
     private String convertListToString(List<Integer> list) {

@@ -1,11 +1,8 @@
 package com.goropai.resourceservice.controller;
 
-import com.goropai.resourceservice.entity.dto.Mp3FileDto;
-import com.goropai.resourceservice.entity.dto.ResourceIdResponse;
-import com.goropai.resourceservice.entity.dto.ResourceIdsResponse;
+import com.goropai.resourceservice.entity.dto.*;
 import com.goropai.resourceservice.service.MetadataService;
 import com.goropai.resourceservice.service.ResourceService;
-import com.goropai.resourceservice.entity.dto.Mp3MetadataDto;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -41,7 +38,7 @@ public class ResourceController {
     @Transactional
     public ResponseEntity<ResourceIdResponse> uploadAudio(@RequestBody byte[] audioData) throws IOException {
         Mp3FileDto savedFile = resourceService.save(new Mp3FileDto(audioData));
-        Mp3MetadataDto result = metadataService.parseAndSave(savedFile).block();
+        Mp3MetadataDto result = metadataService.parseAndSave(savedFile);
         return ResponseEntity.status(HttpStatus.OK).body(
                 new ResourceIdResponse(Optional.ofNullable(result).map(Mp3MetadataDto::getId).orElse(null)));
     }
@@ -78,7 +75,7 @@ public class ResourceController {
     @Transactional
     public ResponseEntity<ResourceIdsResponse> deleteAudio(@RequestParam(name = "id") String ids) {
         List<Integer> correctIds = resourceService.deleteByIds(ids);
-        metadataService.deleteMetadata(correctIds).subscribe();
-        return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdsResponse(correctIds));
+        SongIdsResponse response = metadataService.deleteMetadata(correctIds);
+        return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdsResponse(response.getIds()));
     }
 }
