@@ -5,9 +5,6 @@ services:
     build: ./naming-server
     ports:
       - "8761:8761"
-    environment:
-      EUREKA_CLIENT_REGISTER_WITH_EUREKA: false
-      EUREKA_CLIENT_FETCH_REGISTRY: false
     networks:
       - my-network
 
@@ -19,8 +16,6 @@ services:
       - "8765:8765"
     depends_on:
       - naming-server
-    environment:
-      SPRING_CLOUD_CONFIG_ENABLED: false
     networks:
       - my-network
 
